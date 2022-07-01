@@ -1,0 +1,4 @@
+{
+  "prettier.proseWrap": "always",
+  "prettier.enable": true
+}
