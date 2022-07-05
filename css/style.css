@@ -1,1 +1,17 @@
 /* Stylesheet by Trever J. Bruhn 2022*/
+
+.states {
+  fill: #fff;
+  stroke: #ccc;
+  stroke-width: 2px;
+}
+
+.gratLines {
+  fill: none;
+  stroke: #999;
+  stroke-width: 1px;
+}
+
+.gratBackground {
+  fill: #d5e3ff;
+}
