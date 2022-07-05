@@ -55,49 +55,15 @@
 
       console.log("csv: ", csvData[47]);
       console.log("usSt: ", usSt.objects.usStates.geometries[0].properties);
-      //graticule generator
-      var graticule = d3.geoGraticule().step([5, 5]); //places lines every 5 deg of lat/lon
 
-      //create graticule background
-      var gratBackground = map
-        .append("path")
-        .datum(graticule.outline()) //bind grat background
-        .attr("class", "gratBackground")
-        .attr("d", path);
-
-      var gratLines = map
-        .selectAll(".gratLines")
-        .data(graticule.lines())
-        .enter()
-        .append("path") //append each item as a path element
-        .attr("class", "gratLines")
-        .attr("d", path);
+      //place graticule on map
+      setGraticule(map, path);
 
       //translate us topojson
       var usStates = topojson.feature(usSt, usSt.objects.usStates).features;
 
-      //loop through csv to join attributes to each state in usStates
-      for (var i = 0; i < csvData.length; i++) {
-        var csvState = csvData[i]; //current state
-        var csvKey = csvState.stateId;
-
-        //loop through the usStates to match the correct state
-        for (a = 0; a < usStates.length; a++) {
-          var geojsonProps = usStates[a].properties;
-          var geojsonKey = geojsonProps.postal;
-
-          //check for match
-          if (geojsonKey == csvKey) {
-            //assign attributes and values
-            geojsonProps["state_name"] = csvState["state_name"]; //assign state_nam attr val seperate to retain as string
-            attrArray.forEach(function (attr) {
-              var val = parseFloat(csvState[attr]); //get attribute value as float
-              geojsonProps[attr] = val; // assign attr value to usStates
-            });
-          }
-        }
-      }
       console.log("new usSt: ", usSt.objects.usStates.geometries[0].properties);
+
       //could use to add adjacent countries to the map
       // var states = map
       //   .append("path")
@@ -105,15 +71,69 @@
       //   .attr("class", "states")
       //   .attr("d", path); // d is an attribute of <path> not the variable d that holds data in a data block
 
-      var states = map
-        .selectAll(".states")
-        .data(usStates)
-        .enter()
-        .append("path") //operand
-        .attr("class", function (d) {
-          return "states " + d.properties.postal;
-        })
-        .attr("d", path);
+      //join csvdata to geojson enumeration units
+      usStates = joinData(usStates, csvData);
+
+      //add enumeration units to the map
+      setEnumerationUnits(usStates, map, path);
+    } //end of callback
+  } //end of setmap
+
+  function setGraticule(map, path) {
+    var graticule = d3
+      .geoGraticule() //graticule generator
+      .step([5, 5]); //places lines every 5 deg of lat/lon
+
+    //create graticule background
+    var gratBackground = map
+      .append("path")
+      .datum(graticule.outline()) //bind grat background
+      .attr("class", "gratBackground")
+      .attr("d", path);
+
+    var gratLines = map
+      .selectAll(".gratLines")
+      .data(graticule.lines())
+      .enter()
+      .append("path") //append each item as a path element
+      .attr("class", "gratLines")
+      .attr("d", path);
+  } //end setGraticule
+
+  function joinData(usStates, csvData) {
+    //loop through csv to join attributes to each state in usStates
+    for (var i = 0; i < csvData.length; i++) {
+      var csvState = csvData[i]; //current state
+      var csvKey = csvState.stateId;
+
+      //loop through the usStates to match the correct state
+      for (a = 0; a < usStates.length; a++) {
+        var geojsonProps = usStates[a].properties;
+        var geojsonKey = geojsonProps.postal;
+
+        //check for match
+        if (geojsonKey == csvKey) {
+          //assign attributes and values
+          geojsonProps["state_name"] = csvState["state_name"]; //assign state_nam attr val seperate to retain as string
+          attrArray.forEach(function (attr) {
+            var val = parseFloat(csvState[attr]); //get attribute value as float
+            geojsonProps[attr] = val; // assign attr value to usStates
+          });
+        }
+      }
     }
-  }
+    return usStates;
+  } //end joinData
+
+  function setEnumerationUnits(usStates, map, path) {
+    var states = map
+      .selectAll(".states")
+      .data(usStates)
+      .enter()
+      .append("path") //operand
+      .attr("class", function (d) {
+        return "states " + d.properties.postal;
+      })
+      .attr("d", path);
+  } //end setEnumeration units
 })(); //close out wrap local-scope function
