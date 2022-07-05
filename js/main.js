@@ -1,81 +1,119 @@
 // javascript by Trever J. Bruhn 2022
 
-//begin script when window loads
-window.onload = setMap();
+//wrap everything in a function to create local scope for all variables and functions
+(function () {
+  //define psuedo-global variables that will be available to everything within the wrap function
 
-//set up chorpleth map
-function setMap() {
-  //map frame dimensions
-  var width = 960,
-    height = 460;
+  var attrArray = [
+    "residential",
+    "commercial",
+    "electric_power",
+    "industrial",
+    "transportation",
+    "total",
+    "pop_2018",
+  ]; //csv attributes to be joined to usStates
+  var expressed = attrArray[0]; //initial variable in the array
 
-  var map = d3
-    .select("body div")
-    .append("svg") //operand
-    .attr("class", "map")
-    .attr("width", width)
-    .attr("height", height);
+  //begin script when window loads
+  window.onload = setMap();
 
-  var projection = d3
-    .geoAlbers()
-    .center([0, 39.5])
-    .rotate([98.35, 0, 0])
-    .parallels([33, 45])
-    .scale(932)
-    .translate([width / 2, height / 2]);
+  //set up chorpleth map
+  function setMap() {
+    //map frame dimensions
+    var width = 960,
+      height = 460;
 
-  var path = d3
-    .geoPath() //path generator
-    .projection(projection);
+    var map = d3
+      .select("body div")
+      .append("svg") //operand
+      .attr("class", "map")
+      .attr("width", width)
+      .attr("height", height);
 
-  //use queue to parallelize asynchronous data loading
-  var promises = [];
-  promises.push(d3.csv("data/stateData.csv")); //load attributes from csv
-  promises.push(d3.json("data/usStates.topojson")); //Load spatial data
-  Promise.all(promises).then(callback);
+    var projection = d3
+      .geoAlbers()
+      .center([0, 39.5])
+      .rotate([98.35, 0, 0])
+      .parallels([33, 45])
+      .scale(932)
+      .translate([width / 2, height / 2]);
 
-  function callback(data) {
-    csvData = data[0];
-    usSt = data[1];
+    var path = d3
+      .geoPath() //path generator
+      .projection(projection);
 
-    //graticule generator
-    var graticule = d3.geoGraticule().step([5, 5]); //places lines every 5 deg of lat/lon
-    console.log("graticule", graticule.lines());
-    //create graticule background
-    var gratBackground = map
-      .append("path")
-      .datum(graticule.outline()) //bind grat background
-      .attr("class", "gratBackground")
-      .attr("d", path);
+    //use queue to parallelize asynchronous data loading
+    var promises = [];
+    promises.push(d3.csv("data/stateData.csv")); //load attributes from csv
+    promises.push(d3.json("data/usStates.topojson")); //Load spatial data
+    Promise.all(promises).then(callback);
 
-    var gratLines = map
-      .selectAll(".gratLines")
-      .data(graticule.lines())
-      .enter()
-      .append("path") //append each item as a path element
-      .attr("class", "gratLines")
-      .attr("d", path);
+    function callback(data) {
+      csvData = data[0];
+      usSt = data[1];
 
-    //translate us topojson
-    var usStates = topojson.feature(usSt, usSt.objects.usStates).features;
+      console.log("csv: ", csvData[47]);
+      console.log("usSt: ", usSt.objects.usStates.geometries[0].properties);
+      //graticule generator
+      var graticule = d3.geoGraticule().step([5, 5]); //places lines every 5 deg of lat/lon
 
-    console.log("ustates: ", usStates);
+      //create graticule background
+      var gratBackground = map
+        .append("path")
+        .datum(graticule.outline()) //bind grat background
+        .attr("class", "gratBackground")
+        .attr("d", path);
 
-    //add states to the map
-    // var states = map
-    //   .append("path")
-    //   .datum(usStates) //the geojson feature collection as a single datum drawn as a single feature
-    //   .attr("class", "states")
-    //   .attr("d", path); // d is an attribute of <path> not the variable d that holds data in a data block
+      var gratLines = map
+        .selectAll(".gratLines")
+        .data(graticule.lines())
+        .enter()
+        .append("path") //append each item as a path element
+        .attr("class", "gratLines")
+        .attr("d", path);
 
-    var states = map
-      .selectAll(".states")
-      .data(usStates)
-      .enter()
-      .append("path") //operand
-      .attr("class", function (d) {
-        return "states " + d.properties.postal;
-      })
-      .attr("d", path);
+      //translate us topojson
+      var usStates = topojson.feature(usSt, usSt.objects.usStates).features;
+
+      //loop through csv to join attributes to each state in usStates
+      for (var i = 0; i < csvData.length; i++) {
+        var csvState = csvData[i]; //current state
+        var csvKey = csvState.stateId;
+
+        //loop through the usStates to match the correct state
+        for (a = 0; a < usStates.length; a++) {
+          var geojsonProps = usStates[a].properties;
+          var geojsonKey = geojsonProps.postal;
+
+          //check for match
+          if (geojsonKey == csvKey) {
+            //assign attributes and values
+            geojsonProps["state_name"] = csvState["state_name"]; //assign state_nam attr val seperate to retain as string
+            attrArray.forEach(function (attr) {
+              var val = parseFloat(csvState[attr]); //get attribute value as float
+              geojsonProps[attr] = val; // assign attr value to usStates
+            });
+          }
+        }
+      }
+      console.log("new usSt: ", usSt.objects.usStates.geometries[0].properties);
+      //could use to add adjacent countries to the map
+      // var states = map
+      //   .append("path")
+      //   .datum(usStates) //the geojson feature collection as a single datum drawn as a single feature
+      //   .attr("class", "states")
+      //   .attr("d", path); // d is an attribute of <path> not the variable d that holds data in a data block
+
+      var states = map
+        .selectAll(".states")
+        .data(usStates)
+        .enter()
+        .append("path") //operand
+        .attr("class", function (d) {
+          return "states " + d.properties.postal;
+        })
+        .attr("d", path);
+    }
   }
-}
+})(); //close out wrap local-scope function
