@@ -13,7 +13,7 @@
     "total",
     "pop_2018",
   ]; //csv attributes to be joined to usStates
-  var expressed = attrArray[0]; //initial variable in the array
+  var expressed = attrArray[5]; //initial variable in the array
 
   //begin script when window loads
   window.onload = setMap();
@@ -74,8 +74,11 @@
       //join csvdata to geojson enumeration units
       usStates = joinData(usStates, csvData);
 
+      //create color scale
+      var colorScale = makeColorScale(csvData);
+
       //add enumeration units to the map
-      setEnumerationUnits(usStates, map, path);
+      setEnumerationUnits(usStates, map, path, colorScale);
     } //end of callback
   } //end of setmap
 
@@ -125,7 +128,7 @@
     return usStates;
   } //end joinData
 
-  function setEnumerationUnits(usStates, map, path) {
+  function setEnumerationUnits(usStates, map, path, colorScale) {
     var states = map
       .selectAll(".states")
       .data(usStates)
@@ -134,6 +137,53 @@
       .attr("class", function (d) {
         return "states " + d.properties.postal;
       })
-      .attr("d", path);
+      .attr("d", path)
+      .style("fill", function (d) {
+        return choropleth(d.properties, colorScale);
+      });
   } //end setEnumeration units
+
+  //function to create colorscale generator
+  function makeColorScale(data) {
+    var colorClasses = ["#D4B9DA", "#C994C7", "#DF65B0", "#DD1C77", "#980043"];
+
+    //create colorscale generator
+    var colorScale = d3.scaleThreshold().range(colorClasses);
+
+    //build array of all values of the expressed attribute
+    var domainArray = [];
+    for (var i = 0; i < data.length; i++) {
+      //conditional toremove US totals from vals
+      if (data[i]["stateId"] != "US") {
+        var val = parseFloat(data[i][expressed]);
+        domainArray.push(val);
+      }
+    }
+
+    //clustering data using ckmeans to create natural breaks
+    var clusters = ss.ckmeans(domainArray, 5);
+    //reset domain array to cluster minimums
+    domainArray = clusters.map(function (d) {
+      return d3.min(d);
+    });
+    //remove first value from domain array to create class breakpoints
+    domainArray.shift();
+
+    //assign array of last 4 cluster mins as domain
+    colorScale.domain(domainArray);
+
+    return colorScale;
+  }
+
+  //function to test for data value and return nuetral color
+  function choropleth(props, colorScale) {
+    var val = parseFloat(props[expressed]);
+
+    //if val exists assign color otherwise assign grey
+    if (typeof val == "number" && !isNaN(val)) {
+      return colorScale(val);
+    } else {
+      return "#CCC";
+    }
+  }
 })(); //close out wrap local-scope function

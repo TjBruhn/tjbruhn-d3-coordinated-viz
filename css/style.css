@@ -1,9 +1,9 @@
 /* Stylesheet by Trever J. Bruhn 2022*/
 
 .states {
-  fill: #fff;
-  stroke: #ccc;
-  stroke-width: 2px;
+  stroke: rgb(103, 102, 102);
+  stroke-width: 0.5px;
+  stroke-linecap: round;
 }
 
 .gratLines {
