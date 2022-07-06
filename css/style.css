@@ -1,5 +1,11 @@
 /* Stylesheet by Trever J. Bruhn 2022*/
 
+/* ======= map frame ======== */
+.map {
+  border: medium solid #999;
+  margin: 10px 0 0 20px;
+}
+
 .states {
   stroke: rgb(103, 102, 102);
   stroke-width: 0.5px;
@@ -14,4 +20,53 @@
 
 .gratBackground {
   fill: #d5e3ff;
+}
+
+/* ======= chart frame ======== */
+
+.chart {
+  /* background-color: rgba(128, 128, 128, 0.2); */
+  /* border: medium solid #999; */
+  float: right;
+  margin: 10px 20px 0 0;
+}
+
+.chartBackground {
+  fill: rgba(128, 128, 128, 0.2);
+  stroke: #999;
+  stroke-width: 3px;
+  shape-rendering: crispEdges;
+}
+
+.chartFrame {
+  fill: none;
+  stroke: #999;
+  stroke-width: 3px;
+  shape-rendering: crispEdges;
+}
+
+.chartTitle {
+  font-family: sans-serif;
+  font-size: 1em;
+  font-weight: bold;
+}
+
+.barLabels {
+  fill: white;
+  font-family: sans-serif;
+  font-size: 0.4em;
+}
+
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #999;
+  stroke-width: 1px;
+  shape-rendering: crispEdges;
+}
+
+.axis text {
+  font-family: sans-serif;
+  font-size: 0.8em;
+  fill: #999;
 }

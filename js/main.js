@@ -13,7 +13,7 @@
     "total",
     "pop_2018",
   ]; //csv attributes to be joined to usStates
-  var expressed = attrArray[5]; //initial variable in the array
+  var expressed = attrArray[2]; //initial variable in the array
 
   //begin script when window loads
   window.onload = setMap();
@@ -21,7 +21,7 @@
   //set up chorpleth map
   function setMap() {
     //map frame dimensions
-    var width = 960,
+    var width = window.innerWidth * 0.5,
       height = 460;
 
     var map = d3
@@ -79,6 +79,9 @@
 
       //add enumeration units to the map
       setEnumerationUnits(usStates, map, path, colorScale);
+      console.log("csvData", csvData);
+      //add coordinated viz to the map
+      setChart(csvData, colorScale);
     } //end of callback
   } //end of setmap
 
@@ -186,4 +189,121 @@
       return "#CCC";
     }
   }
+
+  //function to create coordinated bar chart
+  function setChart(csvData, colorScale) {
+    csvData = csvData.slice(0, 50);
+
+    //chart frame dimensions
+    var chartWidth = window.innerWidth * 0.425,
+      chartHeight = 473,
+      leftPadding = 25,
+      rightPadding = 2,
+      topBottomPadding = 5,
+      chartInnerWidth = chartWidth - leftPadding - rightPadding,
+      chartInnerHeight = chartHeight - topBottomPadding * 2,
+      translate = "translate(" + leftPadding + "," + topBottomPadding + ")";
+
+    //create a second SVG element
+    var chart = d3
+      .select("body div")
+      .append("svg")
+      .attr("width", chartWidth)
+      .attr("height", chartHeight)
+      .attr("class", "chart");
+
+    //rectangle for axis and background stuff
+    var chartBackground = chart
+      .append("rect")
+      .attr("class", "chartBackground")
+      .attr("width", chartInnerWidth)
+      .attr("height", chartInnerHeight)
+      .attr("transform", translate);
+
+    //create sclae for scale bars
+    var yScale = d3
+      .scaleLinear()
+      .range([463, 0]) //adjusted to show small vals and not have high vals touch top
+      .domain([-5, d3.max(csvData, (d) => parseFloat(d[expressed])) + 5]); //adjust to data range
+
+    //set bars by state
+    var bars = chart
+      .selectAll(".bar")
+      .data(csvData)
+      .enter()
+      .append("rect")
+      .sort(function (a, b) {
+        return b[expressed] - a[expressed];
+      })
+      .attr("class", function (d) {
+        return "bar " + d.stateId;
+      })
+      .attr("width", chartInnerWidth / csvData.length - 1)
+      .attr("x", function (d, i) {
+        return i * (chartInnerWidth / csvData.length) + leftPadding;
+      })
+      .attr("height", function (d) {
+        return 463 - yScale(parseFloat(d[expressed]));
+      })
+      .attr("y", function (d) {
+        return yScale(parseFloat(d[expressed])) + topBottomPadding;
+      })
+      .style("fill", function (d) {
+        return choropleth(d, colorScale);
+      });
+
+    //annotate bars with attribute value text
+    var barLabels = chart
+      .selectAll(".barLabels")
+      .data(csvData)
+      .enter()
+      .append("text")
+      .sort(function (a, b) {
+        return b[expressed] - a[expressed];
+      })
+      .attr("class", function (d) {
+        return "barLabels " + d.stateId;
+      })
+      .attr("text-anchor", "middle")
+      .attr("x", function (d, i) {
+        var fraction = chartInnerWidth / csvData.length;
+        return leftPadding + i * fraction + (fraction - 1) / 2;
+      })
+      .attr("y", function (d) {
+        return yScale(parseFloat(d[expressed])) + topBottomPadding + 8;
+      })
+      .text(function (d) {
+        return d.stateId; //use state abbr instead of vals
+      });
+
+    //create text element for chart title
+    var chartTitle = chart
+      .append("text")
+      .attr("x", 60)
+      .attr("y", 30)
+      .attr("class", "chartTitle")
+      .text(
+        "Metric Tons of co2 emitted through " +
+          expressed.replace("_", " ") +
+          " sources by state."
+      ); //replace the underscore with a space
+
+    //create vertical axis generator
+    var yAxis = d3.axisLeft().scale(yScale);
+
+    //place axis
+    var axis = chart
+      .append("g")
+      .attr("class", "axis")
+      .attr("transform", translate)
+      .call(yAxis);
+
+    //create frame for chart border
+    // var chartFrame = chart
+    //   .append("rect")
+    //   .attr("class", "chartFrame")
+    //   .attr("width", chartInnerWidth)
+    //   .attr("height", chartInnerHeight)
+    //   .attr("transform", translate);
+  } //end setchart
 })(); //close out wrap local-scope function
