@@ -512,7 +512,6 @@
       .node()
       .getBoundingClientRect().width;
 
-    console.log(labelWidth);
     //use coords of the mousemove event to set label coords
     var x1 = event.clientX + 10,
       y1 = event.clientY - 75,
