@@ -89,3 +89,22 @@
 option {
   font-weight: normal;
 }
+
+.infoLabel {
+  position: absolute;
+  height: auto;
+  min-width: 100px;
+  color: #fff;
+  background-color: rgb(104, 104, 104);
+  border: solid thin #fff;
+  border-radius: 1em;
+  padding: 5px 10px;
+  top: -100px; /*moves the label off the page*/
+}
+
+.infoLabel h1 {
+  margin: 0 20px 0 0;
+  padding: 0;
+  display: inline-block;
+  line-height: 1em;
+}

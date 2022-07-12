@@ -137,7 +137,7 @@
       //loop through the usStates to match the correct state
       for (a = 0; a < usStates.length; a++) {
         var geojsonProps = usStates[a].properties;
-        var geojsonKey = geojsonProps.postal;
+        var geojsonKey = geojsonProps.stateId;
 
         //check for match
         if (geojsonKey == csvKey) {
@@ -160,12 +160,26 @@
       .enter()
       .append("path") //operand
       .attr("class", function (d) {
-        return "states " + d.properties.postal;
+        return "states " + d.properties.stateId;
       })
       .attr("d", path)
       .style("fill", function (d) {
         return choropleth(d.properties, colorScale);
+      })
+      .on("mouseover", function (event, d) {
+        highlight(d.properties);
+      })
+      .on("mouseout", function (event, d) {
+        dehighlight(d.properties);
+      })
+      .on("mousemove", function (event, d) {
+        moveLabel(event);
       });
+
+    //add style descriptor to path
+    var desc = states
+      .append("desc")
+      .text('{"stroke": "rgb(103, 102, 102)", "stroke-width": "0.5px"}');
   } //end setEnumeration units
 
   //function to create colorscale generator
@@ -242,7 +256,21 @@
       .attr("class", function (d) {
         return "bar " + d.stateId;
       })
-      .attr("width", chartInnerWidth / csvData.length - 1);
+      .attr("width", chartInnerWidth / csvData.length - 1)
+      .on("mouseover", function (event, d) {
+        highlight(d);
+      })
+      .on("mouseout", function (event, d) {
+        dehighlight(d);
+      })
+      .on("mousemove", function (event) {
+        moveLabel(event);
+      });
+
+    //add style descriptor to bars
+    var desc = bars
+      .append("desc")
+      .text('{"stroke": "none", "stroke-width": "0px"}');
 
     //annotate bars with attribute value text
     var barLabels = chart
@@ -330,20 +358,36 @@
     var colorScale = makeColorScale(csvData);
 
     //recolor enumeration units
-    var states = d3.selectAll(".states").style("fill", function (d) {
-      return choropleth(d.properties, colorScale);
-    });
+    var states = d3
+      .selectAll(".states")
+      .transition()
+      .duration(1000)
+      .style("fill", function (d) {
+        return choropleth(d.properties, colorScale);
+      });
 
     var bars = d3
       .selectAll(".bar")
       //resort bars
       .sort(function (a, b) {
         return b[expressed] - a[expressed];
-      });
+      })
+      .transition()
+      .delay(function (d, i) {
+        return i * 20;
+      })
+      .duration(500);
 
-    var barLabels = d3.selectAll(".barLabels").sort(function (a, b) {
-      return b[expressed] - a[expressed];
-    });
+    var barLabels = d3
+      .selectAll(".barLabels")
+      .sort(function (a, b) {
+        return b[expressed] - a[expressed];
+      })
+      .transition()
+      .delay(function (d, i) {
+        return i * 20;
+      })
+      .duration(500);
 
     updateChart(bars, barLabels, csvData, colorScale);
   } // end changeAttribute
@@ -389,8 +433,98 @@
     //dynamically update axis values
     //create vertical axis generator
     var yAxis = d3.axisLeft().scale(yScale(csvData));
-
     //update axis values
     var axis = d3.select(".axis").call(yAxis);
+  } //end update chart
+
+  //function to highlight elements on mouseover
+  function highlight(props) {
+    //limit the classes to exclude the labels
+    var limitClass = [".states", ".bar"];
+    limitClass.forEach(selected);
+    function selected(item) {
+      return d3
+        .selectAll("." + props.stateId)
+        .filter(item)
+        .style("stroke", "white")
+        .style("stroke-width", "2px");
+    }
+    setLabel(props);
+  }
+
+  //function to remove highlight from elements on mouseout
+  function dehighlight(props) {
+    //limit the classes to exclude the labels
+    var limitClass = [".states", ".bar"];
+    limitClass.forEach(selected);
+    function selected(item) {
+      return d3
+        .selectAll("." + props.stateId)
+        .filter(item)
+        .style("stroke", function () {
+          return getStyle(this, "stroke");
+        })
+        .style("stroke-width", function () {
+          return getStyle(this, "stroke-width");
+        });
+    }
+
+    //remove the info label
+    d3.select(".infoLabel").remove();
+
+    function getStyle(element, styleName) {
+      var styleText = d3.select(element).select("desc").text();
+
+      var styleObject = JSON.parse(styleText);
+      return styleObject[styleName];
+    }
+  }
+
+  //function to create dynamic label
+  function setLabel(props) {
+    //label content
+    var labelAttribute =
+      "<h1>" +
+      props[expressed] +
+      "</h1><b>MTCO2 <br> from " +
+      expressed +
+      " sources</b>";
+
+    //create info label div
+    var infoLabel = d3
+      .select("body div")
+      .append("div")
+      .attr("class", "infoLabel")
+      .attr("id", props.stateId + "_label")
+      .html(labelAttribute);
+
+    var stateName = infoLabel
+      .append("div")
+      .attr("class", "labelname")
+      .html(props.state_name);
+  }
+
+  //function to move label with mouse
+  function moveLabel(event) {
+    //get width of the label
+    var labelWidth = d3
+      .select(".infoLabel")
+      .node()
+      .getBoundingClientRect().width;
+
+    console.log(labelWidth);
+    //use coords of the mousemove event to set label coords
+    var x1 = event.clientX + 10,
+      y1 = event.clientY - 75,
+      x2 = event.clientX - labelWidth - 10,
+      y2 = event.clientY + 25;
+
+    //horizontal label coord testion for overflow
+    var x = event.clientX > window.innerWidth - labelWidth - 20 ? x2 : x1;
+    var y = event.clientY < 75 ? y2 : y1;
+
+    d3.select(".infoLabel")
+      .style("left", x + "px")
+      .style("top", y + "px");
   }
 })(); //close out wrap local-scope function
