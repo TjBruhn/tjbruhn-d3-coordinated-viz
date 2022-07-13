@@ -1,5 +1,5 @@
 // javascript by Trever J. Bruhn 2022
-
+//butto bar
 //wrap everything in a function to create local scope for all variables and functions
 (function () {
   //define psuedo-global variables that will be available to everything within the wrap function
