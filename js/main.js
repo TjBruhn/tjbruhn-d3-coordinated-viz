@@ -14,7 +14,19 @@
     "pop_2018",
   ]; //csv attributes to be joined to usStates
 
-  var expressed = attrArray[0]; //initial variable in the array
+  var expressed = attrArray[5]; //initial variable to display set to start with total
+
+  //create labels for attributes
+  var attrLabels = {
+    residential: "Residential",
+    commercial: "Commercial",
+    electric_power: "Electric Power Generation",
+    industrial: "Industrial",
+    transportation: "Transportation",
+    total: "All",
+    pop_2018: "2018 Population",
+  };
+  console.log("attrLabel", attrLabels[expressed]);
 
   //chart frame dimensions
   var chartWidth = window.innerWidth * 0.425,
@@ -244,6 +256,25 @@
       .attr("height", chartInnerHeight)
       .attr("transform", translate);
 
+    //rectangle background for axis
+    var axisBackground = chart
+      .append("rect")
+      .attr("class", "axisBackground")
+      .attr("width", chartWidth - chartInnerWidth)
+      .attr("height", chartHeight)
+      .attr("rx", "0.4em")
+      .style("fill", "none");
+
+    //create vertical axis generator
+    var yAxis = d3.axisLeft().scale(yScale(csvData));
+
+    //place axis
+    var axis = chart
+      .append("g")
+      .attr("class", "axis")
+      .attr("transform", translate)
+      .call(yAxis);
+
     //set bars by state
     var bars = chart
       .selectAll(".bar")
@@ -288,24 +319,10 @@
     //create text element for chart title
     var chartTitle = chart
       .append("text")
-      .attr("x", 60)
+      .attr("text-anchor", "middle")
+      .attr("x", chartInnerWidth / 2 + leftPadding)
       .attr("y", 30)
-      .attr("class", "chartTitle")
-      .text(
-        "Metric Tons of co2 emitted through " +
-          expressed.replace("_", " ") +
-          " sources by state."
-      ); //replace the underscore with a space
-
-    //create vertical axis generator
-    var yAxis = d3.axisLeft().scale(yScale(csvData));
-
-    //place axis
-    var axis = chart
-      .append("g")
-      .attr("class", "axis")
-      .attr("transform", translate)
-      .call(yAxis);
+      .attr("class", "chartTitle");
 
     //create frame for chart border
     // var chartFrame = chart
@@ -333,7 +350,7 @@
       .append("option")
       .attr("class", "titleOption")
       .attr("disabled", "true") //makes this not selectable
-      .text("Select Attribute");
+      .text("Change Source");
 
     //add attribute name options
     var attrOptions = dropdown
@@ -345,7 +362,7 @@
         return d;
       })
       .text(function (d) {
-        return d;
+        return attrLabels[d];
       });
   } //end createDropdown
 
@@ -389,11 +406,33 @@
       })
       .duration(500);
 
+    //transition flash axisBackground
+    var axisBackground = d3
+      .selectAll(".axisBackground")
+      .transition()
+      .style("fill", "#f1e1f2")
+      .duration(1200)
+      .transition()
+      .style("fill", "none");
+
     updateChart(bars, barLabels, csvData, colorScale);
   } // end changeAttribute
 
   //function to position style and color bars in chart
   function updateChart(bars, barLabels, csvData, colorScale) {
+    //dynamically update axis values
+    //create vertical axis generator
+    var yAxis = d3.axisLeft().scale(yScale(csvData));
+    //update axis values
+    var axis = d3
+      .select(".axis")
+      .transition()
+      .duration(1500)
+      .ease(d3.easeElastic)
+      .call(yAxis.tickSize(5 - chartInnerWidth))
+      .call((g) => g.select(".domain").remove())
+      .call((g) => g.selectAll(".tick text").attr("x", "-5"));
+
     bars
       .attr("x", function (d, i) {
         return i * (chartInnerWidth / csvData.length) + leftPadding;
@@ -425,16 +464,8 @@
     var chartTitle = d3
       .select(".chartTitle")
       .text(
-        "Metric Tons of co2 emitted through " +
-          expressed.replace("_", " ") +
-          " sources by state."
+        "Metric Tons of CO2 emitted by " + attrLabels[expressed] + " sources"
       );
-
-    //dynamically update axis values
-    //create vertical axis generator
-    var yAxis = d3.axisLeft().scale(yScale(csvData));
-    //update axis values
-    var axis = d3.select(".axis").call(yAxis);
   } //end update chart
 
   //function to highlight elements on mouseover
@@ -482,13 +513,12 @@
 
   //function to create dynamic label
   function setLabel(props) {
+    //round mtco2 to 2 decimal
+    var mtco2 = Number(props[expressed]).toFixed(2);
+
     //label content
     var labelAttribute =
-      "<h1>" +
-      props[expressed] +
-      "</h1><b>MTCO2 <br> from " +
-      expressed +
-      " sources</b>";
+      "<h1>" + mtco2 + "</h1><b>MTCO2 <br> " + expressed + " sources</b>";
 
     //create info label div
     var infoLabel = d3
