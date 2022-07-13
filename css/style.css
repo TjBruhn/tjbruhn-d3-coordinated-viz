@@ -78,9 +78,9 @@
 
 /* ======= selection tools ======== */
 
-.dropdown {
+.btn-group {
   position: absolute;
-  top: 440px;
+  top: 490px;
   left: 45px;
   z-index: 10;
   font-family: sans-serif;

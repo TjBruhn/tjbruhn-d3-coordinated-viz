@@ -1,5 +1,5 @@
 // javascript by Trever J. Bruhn 2022
-//butto bar
+
 //wrap everything in a function to create local scope for all variables and functions
 (function () {
   //define psuedo-global variables that will be available to everything within the wrap function
@@ -339,25 +339,18 @@
   function createDropdown(csvData) {
     var dropdown = d3
       .select("body div")
-      .append("select")
-      .attr("class", "dropdown")
+      .append("div")
+      .attr("class", "btn-group")
       .on("change", function () {
         changeAttribute(this.value, csvData);
       });
-
-    //add initial option
-    var titleOption = dropdown
-      .append("option")
-      .attr("class", "titleOption")
-      .attr("disabled", "true") //makes this not selectable
-      .text("Change Source");
 
     //add attribute name options
     var attrOptions = dropdown
       .selectAll("attrOptions")
       .data(attrArray)
       .enter()
-      .append("option")
+      .append("button")
       .attr("value", function (d) {
         return d;
       })
