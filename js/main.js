@@ -54,8 +54,14 @@
     var width = window.innerWidth * 0.5,
       height = 460;
 
-    var map = d3
+    var mapDiv = d3
       .select("body div")
+      .append("div")
+      .attr("class", "mapDiv")
+      .style("width", window.innerWidth * 0.5 + 5 + "px");
+
+    var map = d3
+      .select(".mapDiv")
       .append("svg") //operand
       .attr("class", "map")
       .attr("width", width)
@@ -115,7 +121,7 @@
       setChart(csvData, colorScale);
 
       //add dropdown selector
-      createDropdown(csvData);
+      createBtnGroup(csvData);
     } //end of callback
   } //end of setmap
 
@@ -336,14 +342,12 @@
   } //end setchart
 
   //function to create dropdown menu for attribute selection
-  function createDropdown(csvData) {
+  function createBtnGroup(csvData) {
     var dropdown = d3
-      .select("body div")
+      .select(".mapDiv")
       .append("div")
       .attr("class", "btn-group")
-      .on("change", function () {
-        changeAttribute(this.value, csvData);
-      });
+      .attr("width", "100%");
 
     //add attribute name options
     var attrOptions = dropdown
@@ -351,13 +355,14 @@
       .data(attrArray)
       .enter()
       .append("button")
-      .attr("value", function (d) {
-        return d;
-      })
-      .text(function (d) {
-        return attrLabels[d];
+      .attr("value", (d) => d)
+      .text((d) => attrLabels[d])
+      .style("width", "14.2857%")
+      .style("height", "42px")
+      .on("click", function () {
+        changeAttribute(this.value, csvData);
       });
-  } //end createDropdown
+  } //end createBtnGroup
 
   //dropdown change event listener
   function changeAttribute(attribute, csvData) {
@@ -511,7 +516,11 @@
 
     //label content
     var labelAttribute =
-      "<h1>" + mtco2 + "</h1><b>MTCO2 <br> " + expressed + " sources</b>";
+      "<h1>" +
+      mtco2 +
+      "</h1><b>MTCO2 <br> " +
+      attrLabels[expressed] +
+      " sources</b>";
 
     //create info label div
     var infoLabel = d3
