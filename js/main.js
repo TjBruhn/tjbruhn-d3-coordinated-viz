@@ -5,22 +5,22 @@
   //define psuedo-global variables that will be available to everything within the wrap function
 
   var attrArray = [
+    "total",
     "residential",
     "commercial",
     "electric_power",
     "industrial",
     "transportation",
-    "total",
     "pop_2018",
   ]; //csv attributes to be joined to usStates
 
-  var expressed = attrArray[5]; //initial variable to display set to start with total
+  var expressed = attrArray[0]; //initial variable to display set to start with total
 
   //create labels for attributes
   var attrLabels = {
     residential: "Residential",
     commercial: "Commercial",
-    electric_power: "Electric Power Generation",
+    electric_power: "Electric Power Production",
     industrial: "Industrial",
     transportation: "Transportation",
     total: "All",
@@ -30,7 +30,8 @@
 
   //chart frame dimensions
   var chartWidth = window.innerWidth * 0.425,
-    chartHeight = 473,
+    chartHeight = 510,
+    chartRange = chartHeight - 10,
     leftPadding = 25,
     rightPadding = 2,
     topBottomPadding = 5,
@@ -42,8 +43,8 @@
   function yScale(csvData) {
     return d3
       .scaleLinear()
-      .range([463, 0]) //adjusted to show small vals and not have high vals touch top
-      .domain([0, d3.max(csvData, (d) => parseFloat(d[expressed])) + 5]); //adjust to data range //need to make work from here d3.max(csvData, (d) => parseFloat(d[expressed])) + 5
+      .range([chartRange, 0]) //adjusted to show small vals and not have high vals touch top
+      .domain([0, d3.max(csvData, (d) => parseFloat(d[expressed])) + 5]); //adjust to data range
   }
   //begin script when window loads
   window.onload = setMap();
@@ -54,17 +55,17 @@
     var width = window.innerWidth * 0.5,
       height = 460;
 
-    var mapDiv = d3
-      .select("body div")
-      .append("div")
-      .attr("class", "mapDiv")
-      .style("width", window.innerWidth * 0.5 + 5 + "px");
+    // var mapDiv = d3
+    //   .select("body div")
+    //   .append("div")
+    //   .attr("class", "mapDiv")
+    //   .style("width", window.innerWidth * 0.5 + 5 + "px");
 
     var map = d3
       .select(".mapDiv")
       .append("svg") //operand
       .attr("class", "map")
-      .attr("width", width)
+      .attr("width", "99%")
       .attr("height", height);
 
     var projection = d3
@@ -248,7 +249,7 @@
   function setChart(csvData, colorScale) {
     //create a second SVG element
     var chart = d3
-      .select("body div")
+      .select(".chartDiv")
       .append("svg")
       .attr("width", chartWidth)
       .attr("height", chartHeight)
@@ -323,7 +324,8 @@
       });
 
     //create text element for chart title
-    var chartTitle = chart
+    var chartTitle = d3
+      .select(".mainTitle")
       .append("text")
       .attr("text-anchor", "middle")
       .attr("x", chartInnerWidth / 2 + leftPadding)
@@ -436,7 +438,7 @@
         return i * (chartInnerWidth / csvData.length) + leftPadding;
       })
       .attr("height", function (d) {
-        return 463 - yScale(csvData)(parseFloat(d[expressed]));
+        return chartRange - yScale(csvData)(parseFloat(d[expressed]));
       })
       .attr("y", function (d) {
         return yScale(csvData)(parseFloat(d[expressed])) + topBottomPadding;
