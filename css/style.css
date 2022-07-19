@@ -100,20 +100,37 @@
 
 /* ======= selection tools ======== */
 
-.btn-group {
-  /* position: absolute;
-  top: 490px;
-  left: 45px;
-  z-index: 10; */
+button {
+  display: inline-block;
+  vertical-align: middle;
+  border: none;
+
+  margin: 0;
+  text-decoration: none;
+  background: #e8e6e6;
+  border-radius: 0.25rem;
+  box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.5);
+  color: #4c3c56;
   font-family: sans-serif;
-  font-size: 1em;
-  /* padding: 2px; */
-  /* border: 1px solid #999; */
+  font-size: 0.95rem;
+  cursor: pointer;
+  text-align: center;
+  transition: background 250ms ease-in-out, transform 150ms ease;
+  -webkit-appearance: none;
+  -moz-appearance: none;
 }
 
-button {
-  font-weight: normal;
-  vertical-align: middle;
+/* button:hover {
+  background: #80808065;
+} */
+
+button:active {
+  transform: scale(0.9);
+}
+
+button.pop_2018 {
+  margin-left: 1%;
+  background: #deebf7;
 }
 
 .infoLabel {
