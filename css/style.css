@@ -48,11 +48,13 @@
 
 .legendLabel {
   font-family: sans-serif;
+  /* the following add the halo effect */
   paint-order: stroke;
   font-size: 1.05rem;
   stroke: white;
   stroke-width: 2;
   stroke-opacity: 1;
+  /*end halo effect */
 }
 
 /* ======= chart frame ======== */
