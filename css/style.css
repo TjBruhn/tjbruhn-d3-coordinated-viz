@@ -46,6 +46,15 @@
   fill: #d5e3ff;
 }
 
+.legendLabel {
+  font-family: sans-serif;
+  paint-order: stroke;
+  font-size: 1.05rem;
+  stroke: white;
+  stroke-width: 2;
+  stroke-opacity: 1;
+}
+
 /* ======= chart frame ======== */
 
 .chart {

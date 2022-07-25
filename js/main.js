@@ -75,8 +75,8 @@
 
     var projection = d3
       .geoAlbers()
-      .center([0, 39.5])
-      .rotate([98.35, 0, 0])
+      .center([0, 39]) //39.5
+      .rotate([100, 0, 0]) //98.35
       .parallels([33, 45])
       .scale(932)
       .translate([width / 2, height / 2]);
@@ -376,7 +376,11 @@
     var legBars = ["high", "mid high", "mid", "mid low", "low"],
       colorClasses = ["#feebe2", "#fbb4b9", "#f768a1", "#c51b8a", "#7a0177"],
       popLegBars = ["high", "mid", "low"],
-      popColorClasses = ["#deebf7", "#9ecae1", "#3182bd"];
+      popColorClasses = ["#deebf7", "#9ecae1", "#3182bd"],
+      maxX = 130,
+      minX = 50,
+      maxY = 420,
+      minY = 340;
 
     //3 class legend for the population overlay chorpleth
     var popLegend = map
@@ -385,10 +389,10 @@
       .enter()
       .append("rect")
       .attr("class", "popLegendBar")
-      .attr("x", (d, i) => 20 + i * 33.3333)
-      .attr("y", "350")
+      .attr("x", (d, i) => minX + i * 26.66666)
+      .attr("y", minY)
       .attr("height", "100px")
-      .attr("width", "33.3333px")
+      .attr("width", "26.66666px")
       .style("fill", (d, i) => popColorClasses[i]);
 
     //5 class legend for the chorpleth attributes
@@ -398,18 +402,55 @@
       .enter()
       .append("rect")
       .attr("class", "legendBar")
-      .attr("x", "20")
+      .attr("x", minX)
       .attr("y", function (d, i) {
-        return 430 - i * 20; // reverse this
+        return maxY - i * 20;
       })
       .attr("height", "20px")
-      .attr("width", "100px")
+      .attr("width", "80px")
       .style("fill", function (d, i) {
         return colorClasses[i];
       });
+
+    //labels for the legend
+    var legendLabel = map
+      .selectAll(".legendLabel")
+      .data(["Low", "High"])
+      .enter()
+      .append("text")
+      .attr("class", "legendLabel")
+      .attr("x", function (d) {
+        if (d == "Low") {
+          return minX - 1;
+        } else if (d == "High") {
+          return maxX + 1;
+        } else {
+          return "0";
+        }
+      })
+      .attr("y", function (d) {
+        if (d == "Low") {
+          return maxY + 20;
+        } else if (d == "High") {
+          return minY + 15;
+        } else {
+          return "0";
+        }
+      })
+      .style("fill", "rgb(41, 40, 40)")
+      .text((d) => d)
+      .attr("text-anchor", function (d) {
+        if (d == "Low") {
+          return "end";
+        } else if (d == "High") {
+          return "start";
+        } else {
+          return "middle";
+        }
+      });
   }
 
-  //function to create btnGroup menu for attribute selection
+  //function to create btnGroup menu for attribute selection and add event listeners for buttons
   function createBtnGroup(csvData) {
     var btnGroup = d3
       .select(".mapDiv")
@@ -429,7 +470,9 @@
       .style("width", "14.1%")
       .style("height", "42px")
       .on("click", function () {
+        //distiguish between pop overlay button and attribute change buttons
         if (this.value == "pop_2018") {
+          //change transparancy to show pop overlay
           if (popOverlayStatus == "off") {
             d3.selectAll(".states").style("fill-opacity", "50%");
             d3.selectAll(".legendBar").style("fill-opacity", "50%");
@@ -441,6 +484,7 @@
               .style("outline", "1px solid #fff")
               .style("outline-offset", "-3px");
           } else {
+            //restore transparancy to hide pop
             d3.selectAll(".states").style("fill-opacity", "100%");
             d3.selectAll(".legendBar").style("fill-opacity", "100%");
             popOverlayStatus = "off";
