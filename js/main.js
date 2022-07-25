@@ -1,36 +1,42 @@
 // javascript by Trever J. Bruhn 2022
 
+//const { data } = require("jquery");
+
 //wrap everything in a function to create local scope for all variables and functions
 (function () {
   //define psuedo-global variables that will be available to everything within the wrap function
 
   var attrArray = [
+    "total",
     "residential",
     "commercial",
     "electric_power",
     "industrial",
     "transportation",
-    "total",
     "pop_2018",
   ]; //csv attributes to be joined to usStates
 
-  var expressed = attrArray[5]; //initial variable to display set to start with total
+  var expressed = attrArray[0]; //initial variable to display set to start with total
+
+  //variable that notes if population overlay is on
+  var popOverlayStatus = "off";
 
   //create labels for attributes
   var attrLabels = {
     residential: "Residential",
     commercial: "Commercial",
-    electric_power: "Electric Power Generation",
+    electric_power: "Electric Power Production",
     industrial: "Industrial",
     transportation: "Transportation",
     total: "All",
-    pop_2018: "2018 Population",
+    pop_2018: "Overlay Population",
   };
-  console.log("attrLabel", attrLabels[expressed]);
+  console.log("attrLabel", attrLabels.pop_2018);
 
   //chart frame dimensions
   var chartWidth = window.innerWidth * 0.425,
-    chartHeight = 473,
+    chartHeight = 510,
+    chartRange = chartHeight - 10,
     leftPadding = 25,
     rightPadding = 2,
     topBottomPadding = 5,
@@ -42,8 +48,8 @@
   function yScale(csvData) {
     return d3
       .scaleLinear()
-      .range([463, 0]) //adjusted to show small vals and not have high vals touch top
-      .domain([0, d3.max(csvData, (d) => parseFloat(d[expressed])) + 5]); //adjust to data range //need to make work from here d3.max(csvData, (d) => parseFloat(d[expressed])) + 5
+      .range([chartRange, 0]) //adjusted to show small vals and not have high vals touch top
+      .domain([0, d3.max(csvData, (d) => parseFloat(d[expressed])) + 5]); //adjust to data range
   }
   //begin script when window loads
   window.onload = setMap();
@@ -54,17 +60,23 @@
     var width = window.innerWidth * 0.5,
       height = 460;
 
+    // var mapDiv = d3
+    //   .select("body div")
+    //   .append("div")
+    //   .attr("class", "mapDiv")
+    //   .style("width", window.innerWidth * 0.5 + 5 + "px");
+
     var map = d3
-      .select("body div")
+      .select(".mapDiv")
       .append("svg") //operand
       .attr("class", "map")
-      .attr("width", width)
+      .attr("width", "99%")
       .attr("height", height);
 
     var projection = d3
       .geoAlbers()
-      .center([0, 39.5])
-      .rotate([98.35, 0, 0])
+      .center([0, 39]) //39.5
+      .rotate([100, 0, 0]) //98.35
       .parallels([33, 45])
       .scale(932)
       .translate([width / 2, height / 2]);
@@ -107,15 +119,28 @@
       //create color scale
       var colorScale = makeColorScale(csvData);
 
+      //add the population overlay map
+      popOverlay(usStates, map, path, csvData);
+
       //add enumeration units to the map
       setEnumerationUnits(usStates, map, path, colorScale);
+
+      legend(map);
+
       console.log("csvData", csvData);
 
       //add coordinated viz to the map
       setChart(csvData, colorScale);
 
-      //add dropdown selector
-      createDropdown(csvData);
+      //add btnGroup selector
+      createBtnGroup(csvData);
+
+      //load page with the all button in the pressed position
+      d3.select(".total")
+        .style("box-shadow", "none")
+        .style("background", "#80808065")
+        .style("outline", "1px solid #fff")
+        .style("outline-offset", "-3px");
     } //end of callback
   } //end of setmap
 
@@ -195,8 +220,19 @@
   } //end setEnumeration units
 
   //function to create colorscale generator
-  function makeColorScale(data) {
-    var colorClasses = ["#D4B9DA", "#C994C7", "#DF65B0", "#DD1C77", "#980043"];
+  function makeColorScale(data, colorClass) {
+    var colorClasses = [];
+    var classCount = 5;
+    if (colorClass == 1) {
+      colorClasses = ["#deebf7", "#9ecae1", "#3182bd"];
+      //["#eff3ff", "#bdd7e7", "#6baed6", "#3182bd", "#08519c"]; //blues-5
+      //greens["#edf8e9", "#bae4b3", "#74c476", "#31a354", "#006d2c"];
+      //grays["#f7f7f7", "#cccccc", "#969696", "#636363", "#252525"];
+      //YlGnBu["#ffffcc", "#a1dab4", "#41b6c4", "#2c7fb8", "#253494"];
+      classCount = 3;
+    } else {
+      colorClasses = ["#feebe2", "#fbb4b9", "#f768a1", "#c51b8a", "#7a0177"];
+    }
 
     //create colorscale generator
     var colorScale = d3.scaleThreshold().range(colorClasses);
@@ -212,7 +248,7 @@
     }
 
     //clustering data using ckmeans to create natural breaks
-    var clusters = ss.ckmeans(domainArray, 5);
+    var clusters = ss.ckmeans(domainArray, classCount);
     //reset domain array to cluster minimums
     domainArray = clusters.map(function (d) {
       return d3.min(d);
@@ -226,10 +262,9 @@
     return colorScale;
   }
 
-  //function to test for data value and return nuetral color
+  //function assign color and to test for data value and return nuetral color
   function choropleth(props, colorScale) {
     var val = parseFloat(props[expressed]);
-
     //if val exists assign color otherwise assign grey
     if (typeof val == "number" && !isNaN(val)) {
       return colorScale(val);
@@ -242,7 +277,7 @@
   function setChart(csvData, colorScale) {
     //create a second SVG element
     var chart = d3
-      .select("body div")
+      .select(".chartDiv")
       .append("svg")
       .attr("width", chartWidth)
       .attr("height", chartHeight)
@@ -317,7 +352,8 @@
       });
 
     //create text element for chart title
-    var chartTitle = chart
+    var chartTitle = d3
+      .select(".mainTitle")
       .append("text")
       .attr("text-anchor", "middle")
       .attr("x", chartInnerWidth / 2 + leftPadding)
@@ -335,38 +371,148 @@
     updateChart(bars, barLabels, csvData, colorScale);
   } //end setchart
 
-  //function to create dropdown menu for attribute selection
-  function createDropdown(csvData) {
-    var dropdown = d3
-      .select("body div")
-      .append("select")
-      .attr("class", "dropdown")
-      .on("change", function () {
-        changeAttribute(this.value, csvData);
+  //function to create legend
+  function legend(map) {
+    var legBars = ["high", "mid high", "mid", "mid low", "low"],
+      colorClasses = ["#feebe2", "#fbb4b9", "#f768a1", "#c51b8a", "#7a0177"],
+      popLegBars = ["high", "mid", "low"],
+      popColorClasses = ["#deebf7", "#9ecae1", "#3182bd"],
+      maxX = 130,
+      minX = 50,
+      maxY = 420,
+      minY = 340;
+
+    //3 class legend for the population overlay chorpleth
+    var popLegend = map
+      .selectAll(".popLegendBar")
+      .data(popLegBars)
+      .enter()
+      .append("rect")
+      .attr("class", "popLegendBar")
+      .attr("x", (d, i) => minX + i * 26.66666)
+      .attr("y", minY)
+      .attr("height", "100px")
+      .attr("width", "26.66666px")
+      .style("fill", (d, i) => popColorClasses[i]);
+
+    //5 class legend for the chorpleth attributes
+    var legend = map
+      .selectAll(".legendBar")
+      .data(legBars)
+      .enter()
+      .append("rect")
+      .attr("class", "legendBar")
+      .attr("x", minX)
+      .attr("y", function (d, i) {
+        return maxY - i * 20;
+      })
+      .attr("height", "20px")
+      .attr("width", "80px")
+      .style("fill", function (d, i) {
+        return colorClasses[i];
       });
 
-    //add initial option
-    var titleOption = dropdown
-      .append("option")
-      .attr("class", "titleOption")
-      .attr("disabled", "true") //makes this not selectable
-      .text("Change Source");
+    //labels for the legend
+    var legendLabel = map
+      .selectAll(".legendLabel")
+      .data(["Low", "High"])
+      .enter()
+      .append("text")
+      .attr("class", (d) => "legendLabel " + d)
+      .attr("x", minX - 1)
+      .attr("y", function (d) {
+        if (d == "Low") {
+          return maxY + 20;
+        } else if (d == "High") {
+          return minY + 15;
+        } else {
+          return "0";
+        }
+      })
+      .style("fill", "rgb(41, 40, 40)")
+      .attr("text-anchor", "end")
+      .text((d) => d);
+  }
+
+  //function to create btnGroup menu for attribute selection and add event listeners for buttons
+  function createBtnGroup(csvData) {
+    var btnGroup = d3
+      .select(".mapDiv")
+      .append("div")
+      .attr("class", "btn-group")
+      .attr("width", "100%");
 
     //add attribute name options
-    var attrOptions = dropdown
+    var attrOptions = btnGroup
       .selectAll("attrOptions")
       .data(attrArray)
       .enter()
-      .append("option")
-      .attr("value", function (d) {
-        return d;
+      .append("button")
+      .attr("class", (d) => "attrOptions " + d)
+      .attr("value", (d) => d)
+      .text((d) => attrLabels[d])
+      .style("width", "14.1%")
+      .style("height", "42px")
+      .on("click", function () {
+        //distiguish between pop overlay button and attribute change buttons
+        if (this.value == "pop_2018") {
+          //change transparancy to show pop overlay
+          if (popOverlayStatus == "off") {
+            d3.selectAll(".states").style("fill-opacity", "50%");
+            d3.selectAll(".legendBar").style("fill-opacity", "50%");
+            popOverlayStatus = "on";
+            d3.select(".pop_2018")
+              .html("Remove Population")
+              .style("box-shadow", "none")
+              .style("background", "#9ecae1")
+              .style("outline", "1px solid #fff")
+              .style("outline-offset", "-3px");
+            d3.select(".High") //move high label to far side of legend
+              .attr("x", "131")
+              .attr("text-anchor", "start");
+          } else {
+            //restore transparancy to hide pop
+            d3.selectAll(".states").style("fill-opacity", "100%");
+            d3.selectAll(".legendBar").style("fill-opacity", "100%");
+            popOverlayStatus = "off";
+            d3.select(".pop_2018")
+              .html("Overlay Population")
+              .style("box-shadow", "0px 1px 2px rgba(0, 0, 0, 0.5)")
+              .style("background", "#deebf7")
+              .style("outline", "none");
+            d3.select(".High") //return high label to left side of legend
+              .attr("x", "49")
+              .attr("text-anchor", "end");
+          }
+        } else {
+          changeAttribute(this.value, csvData);
+          //make button appear pressed down
+          //first remove pressed look from all
+          d3.selectAll(".attrOptions:not(.pop_2018)")
+            .style("box-shadow", "0px 1px 2px rgba(0, 0, 0, 0.5)")
+            .style("background", "#e8e6e6")
+            .style("outline", "none");
+          //then apply pressed look to the selected
+          d3.select("." + this.value)
+            .style("box-shadow", "none")
+            .style("background", "#80808065")
+            .style("outline", "1px solid #fff")
+            .style("outline-offset", "-3px");
+        }
       })
-      .text(function (d) {
-        return attrLabels[d];
+      .on("mouseover", function () {
+        // decrease size of other buttons on hover
+        d3.selectAll(".attrOptions").style("transform", "scale(90%)");
+        // increase size of button on hover
+        d3.select("." + this.value).style("transform", "scale(105%)");
+      })
+      .on("mouseout", function () {
+        //return all buttons to size
+        d3.selectAll(".attrOptions").style("transform", "scale(100%)");
       });
-  } //end createDropdown
+  } //end createBtnGroup
 
-  //dropdown change event listener
+  //btnGroup change event listener
   function changeAttribute(attribute, csvData) {
     //change the expressed attribute
     expressed = attribute;
@@ -438,7 +584,7 @@
         return i * (chartInnerWidth / csvData.length) + leftPadding;
       })
       .attr("height", function (d) {
-        return 463 - yScale(csvData)(parseFloat(d[expressed]));
+        return chartRange - yScale(csvData)(parseFloat(d[expressed]));
       })
       .attr("y", function (d) {
         return yScale(csvData)(parseFloat(d[expressed])) + topBottomPadding;
@@ -518,7 +664,11 @@
 
     //label content
     var labelAttribute =
-      "<h1>" + mtco2 + "</h1><b>MTCO2 <br> " + expressed + " sources</b>";
+      "<h1>" +
+      mtco2 +
+      "</h1><b>MTCO2 <br> " +
+      attrLabels[expressed] +
+      " sources</b>";
 
     //create info label div
     var infoLabel = d3
@@ -555,5 +705,21 @@
     d3.select(".infoLabel")
       .style("left", x + "px")
       .style("top", y + "px");
+  }
+
+  //function to overlay population data(actually underlay)
+  function popOverlay(usStates, map, path, csvData) {
+    var statePop = map
+      .selectAll(".pop")
+      .data(usStates)
+      .enter()
+      .append("path") //operand
+      .attr("class", function (d) {
+        return "pop " + d.properties.stateId;
+      })
+      .attr("d", path)
+      .style("fill", function (d) {
+        return choropleth(d.properties, makeColorScale(csvData, 1));
+      });
   }
 })(); //close out wrap local-scope function
