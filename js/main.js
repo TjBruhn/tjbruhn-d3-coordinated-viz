@@ -4,6 +4,8 @@
 
 //wrap everything in a function to create local scope for all variables and functions
 (function () {
+  //which branch
+  console.log("Branch = year_expressed");
   //define psuedo-global variables that will be available to everything within the wrap function
 
   var attrArray = [
@@ -125,6 +127,7 @@
       //add enumeration units to the map
       setEnumerationUnits(usStates, map, path, colorScale);
 
+      //add legend to the map
       legend(map);
 
       console.log("csvData", csvData);
@@ -432,7 +435,7 @@
       .style("fill", "rgb(41, 40, 40)")
       .attr("text-anchor", "end")
       .text((d) => d);
-  }
+  } //end legend
 
   //function to create btnGroup menu for attribute selection and add event listeners for buttons
   function createBtnGroup(csvData) {
@@ -486,6 +489,7 @@
           }
         } else {
           changeAttribute(this.value, csvData);
+
           //make button appear pressed down
           //first remove pressed look from all
           d3.selectAll(".attrOptions:not(.pop_2018)")
