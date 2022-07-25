@@ -418,16 +418,8 @@
       .data(["Low", "High"])
       .enter()
       .append("text")
-      .attr("class", "legendLabel")
-      .attr("x", function (d) {
-        if (d == "Low") {
-          return minX - 1;
-        } else if (d == "High") {
-          return maxX + 1;
-        } else {
-          return "0";
-        }
-      })
+      .attr("class", (d) => "legendLabel " + d)
+      .attr("x", minX - 1)
       .attr("y", function (d) {
         if (d == "Low") {
           return maxY + 20;
@@ -438,16 +430,8 @@
         }
       })
       .style("fill", "rgb(41, 40, 40)")
-      .text((d) => d)
-      .attr("text-anchor", function (d) {
-        if (d == "Low") {
-          return "end";
-        } else if (d == "High") {
-          return "start";
-        } else {
-          return "middle";
-        }
-      });
+      .attr("text-anchor", "end")
+      .text((d) => d);
   }
 
   //function to create btnGroup menu for attribute selection and add event listeners for buttons
@@ -483,6 +467,9 @@
               .style("background", "#9ecae1")
               .style("outline", "1px solid #fff")
               .style("outline-offset", "-3px");
+            d3.select(".High") //move high label to far side of legend
+              .attr("x", "131")
+              .attr("text-anchor", "start");
           } else {
             //restore transparancy to hide pop
             d3.selectAll(".states").style("fill-opacity", "100%");
@@ -493,6 +480,9 @@
               .style("box-shadow", "0px 1px 2px rgba(0, 0, 0, 0.5)")
               .style("background", "#deebf7")
               .style("outline", "none");
+            d3.select(".High") //return high label to left side of legend
+              .attr("x", "49")
+              .attr("text-anchor", "end");
           }
         } else {
           changeAttribute(this.value, csvData);
