@@ -119,7 +119,7 @@
       usStates = joinData(usStates, csvData);
 
       //create color scale
-      var colorScale = makeColorScale(csvData);
+      var colorScale = makeColorScale(csvData, 5, expressed);
 
       //add the population overlay map
       popOverlay(usStates, map, path, csvData);
@@ -204,7 +204,7 @@
       })
       .attr("d", path)
       .style("fill", function (d) {
-        return choropleth(d.properties, colorScale);
+        return choropleth(d.properties, colorScale, expressed);
       })
       .on("mouseover", function (event, d) {
         highlight(d.properties);
@@ -223,7 +223,8 @@
   } //end setEnumeration units
 
   //function to create colorscale generator
-  function makeColorScale(data, colorClass) {
+  function makeColorScale(data, colorClass, attr) {
+    console.log("makecolor scale called");
     var colorClasses = [];
     var classCount = 5;
     if (colorClass == 1) {
@@ -243,11 +244,8 @@
     //build array of all values of the expressed attribute
     var domainArray = [];
     for (var i = 0; i < data.length; i++) {
-      //conditional toremove US totals from vals
-      if (data[i]["stateId"] != "US") {
-        var val = parseFloat(data[i][expressed]);
-        domainArray.push(val);
-      }
+      var val = parseFloat(data[i][attr]);
+      domainArray.push(val);
     }
 
     //clustering data using ckmeans to create natural breaks
@@ -266,8 +264,9 @@
   }
 
   //function assign color and to test for data value and return nuetral color
-  function choropleth(props, colorScale) {
-    var val = parseFloat(props[expressed]);
+  function choropleth(props, colorScale, attr) {
+    var val = parseFloat(props[attr]);
+
     //if val exists assign color otherwise assign grey
     if (typeof val == "number" && !isNaN(val)) {
       return colorScale(val);
@@ -489,7 +488,7 @@
           }
         } else {
           changeAttribute(this.value, csvData);
-
+          console.log("expressed = ", expressed);
           //make button appear pressed down
           //first remove pressed look from all
           d3.selectAll(".attrOptions:not(.pop_2018)")
@@ -522,7 +521,7 @@
     expressed = attribute;
 
     //recreate the color scale
-    var colorScale = makeColorScale(csvData);
+    var colorScale = makeColorScale(csvData, 5, expressed);
 
     //recolor enumeration units
     var states = d3
@@ -530,7 +529,7 @@
       .transition()
       .duration(1000)
       .style("fill", function (d) {
-        return choropleth(d.properties, colorScale);
+        return choropleth(d.properties, colorScale, expressed);
       });
 
     var bars = d3
@@ -595,7 +594,7 @@
       })
       //recolor bars
       .style("fill", function (d) {
-        return choropleth(d, colorScale);
+        return choropleth(d, colorScale, expressed);
       });
 
     barLabels
@@ -685,7 +684,7 @@
     var stateName = infoLabel
       .append("div")
       .attr("class", "labelname")
-      .html(props.state_name);
+      .html(props.state_name + "<br> pop: " + props.pop_2018.toLocaleString()); // TODO: get commas in number
   }
 
   //function to move label with mouse
@@ -722,8 +721,13 @@
         return "pop " + d.properties.stateId;
       })
       .attr("d", path)
+      .attr("value", (d) => d.properties.pop_2018)
       .style("fill", function (d) {
-        return choropleth(d.properties, makeColorScale(csvData, 1));
+        return choropleth(
+          d.properties,
+          makeColorScale(csvData, 1, "pop_2018"),
+          "pop_2018"
+        );
       });
   }
 })(); //close out wrap local-scope function
