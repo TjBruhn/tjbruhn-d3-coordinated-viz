@@ -8,6 +8,13 @@
   console.log("Branch = year_expressed");
   //define psuedo-global variables that will be available to everything within the wrap function
 
+  //available years
+  var yearArray = ["_2016", "_2017", "_2018"];
+
+  //initial year to set display to
+  var yrExpressed = yearArray[0];
+
+  //csv attributes to be joined to usStates
   var attrArray = [
     "total",
     "residential",
@@ -15,10 +22,13 @@
     "electric_power",
     "industrial",
     "transportation",
-    "pop_2018",
-  ]; //csv attributes to be joined to usStates
+    "pop",
+  ];
 
-  var expressed = attrArray[0]; //initial variable to display set to start with total
+  var attrExpressed = attrArray[0];
+
+  //initial variable to set display to
+  var expressed = attrExpressed + yrExpressed;
 
   //variable that notes if population overlay is on
   var popOverlayStatus = "off";
@@ -31,9 +41,8 @@
     industrial: "Industrial",
     transportation: "Transportation",
     total: "All",
-    pop_2018: "Overlay Population",
+    pop: "Overlay Population",
   };
-  console.log("attrLabel", attrLabels.pop_2018);
 
   //chart frame dimensions
   var chartWidth = window.innerWidth * 0.425,
@@ -89,7 +98,7 @@
 
     //use queue to parallelize asynchronous data loading
     var promises = [];
-    promises.push(d3.csv("data/stateData.csv")); //load attributes from csv
+    promises.push(d3.csv("data/stateData_yrs.csv")); //load attributes from csv
     promises.push(d3.json("data/usStates.topojson")); //Load spatial data
     Promise.all(promises).then(callback);
 
@@ -106,17 +115,10 @@
       //translate us topojson
       var usStates = topojson.feature(usSt, usSt.objects.usStates).features;
 
-      console.log("new usSt: ", usSt.objects.usStates.geometries[0].properties);
-
-      //could use to add adjacent countries to the map
-      // var states = map
-      //   .append("path")
-      //   .datum(usStates) //the geojson feature collection as a single datum drawn as a single feature
-      //   .attr("class", "states")
-      //   .attr("d", path); // d is an attribute of <path> not the variable d that holds data in a data block
-
       //join csvdata to geojson enumeration units
       usStates = joinData(usStates, csvData);
+
+      console.log("new usSt: ", usSt.objects.usStates.geometries[0].properties);
 
       //create color scale
       var colorScale = makeColorScale(csvData, 5, expressed);
@@ -183,9 +185,13 @@
         if (geojsonKey == csvKey) {
           //assign attributes and values
           geojsonProps["state_name"] = csvState["state_name"]; //assign state_nam attr val seperate to retain as string
-          attrArray.forEach(function (attr) {
-            var val = parseFloat(csvState[attr]); //get attribute value as float
-            geojsonProps[attr] = val; // assign attr value to usStates
+
+          //join the attributes outer loop through years inner loop through sources
+          yearArray.forEach(function (yr) {
+            attrArray.forEach(function (attr) {
+              var val = parseFloat(csvState[attr + yr]); //get attribute value as float
+              geojsonProps[attr + yr] = val; // assign attr value to usStates
+            });
           });
         }
       }
@@ -457,13 +463,13 @@
       .style("height", "42px")
       .on("click", function () {
         //distiguish between pop overlay button and attribute change buttons
-        if (this.value == "pop_2018") {
+        if (this.value == "pop") {
           //change transparancy to show pop overlay
           if (popOverlayStatus == "off") {
             d3.selectAll(".states").style("fill-opacity", "50%");
             d3.selectAll(".legendBar").style("fill-opacity", "50%");
             popOverlayStatus = "on";
-            d3.select(".pop_2018")
+            d3.select("button.pop")
               .html("Remove Population")
               .style("box-shadow", "none")
               .style("background", "#9ecae1")
@@ -477,7 +483,7 @@
             d3.selectAll(".states").style("fill-opacity", "100%");
             d3.selectAll(".legendBar").style("fill-opacity", "100%");
             popOverlayStatus = "off";
-            d3.select(".pop_2018")
+            d3.select("button.pop")
               .html("Overlay Population")
               .style("box-shadow", "0px 1px 2px rgba(0, 0, 0, 0.5)")
               .style("background", "#deebf7")
@@ -488,10 +494,10 @@
           }
         } else {
           changeAttribute(this.value, csvData);
-          console.log("expressed = ", expressed);
+
           //make button appear pressed down
           //first remove pressed look from all
-          d3.selectAll(".attrOptions:not(.pop_2018)")
+          d3.selectAll(".attrOptions:not(.pop)")
             .style("box-shadow", "0px 1px 2px rgba(0, 0, 0, 0.5)")
             .style("background", "#e8e6e6")
             .style("outline", "none");
@@ -518,7 +524,8 @@
   //btnGroup change event listener
   function changeAttribute(attribute, csvData) {
     //change the expressed attribute
-    expressed = attribute;
+    expressed = attribute + yrExpressed;
+    attrExpressed = attribute;
 
     //recreate the color scale
     var colorScale = makeColorScale(csvData, 5, expressed);
@@ -613,7 +620,10 @@
     var chartTitle = d3
       .select(".chartTitle")
       .text(
-        "Metric Tons of CO2 emitted by " + attrLabels[expressed] + " sources"
+        "Metric Tons of CO2 Emitted by " +
+          attrLabels[attrExpressed] +
+          " Sources in " +
+          yrExpressed.substring(1)
       );
   } //end update chart
 
@@ -664,13 +674,16 @@
   function setLabel(props) {
     //round mtco2 to 2 decimal
     var mtco2 = Number(props[expressed]).toFixed(2);
+    var population = props["pop" + yrExpressed].toLocaleString();
 
     //label content
     var labelAttribute =
       "<h1>" +
       mtco2 +
       "</h1><b>MTCO2 <br> " +
-      attrLabels[expressed] +
+      yrExpressed.substring(1) +
+      " " +
+      attrLabels[attrExpressed] +
       " sources</b>";
 
     //create info label div
@@ -684,7 +697,7 @@
     var stateName = infoLabel
       .append("div")
       .attr("class", "labelname")
-      .html(props.state_name + "<br> pop: " + props.pop_2018.toLocaleString()); // TODO: get commas in number
+      .html(props.state_name + "<br> pop: " + population);
   }
 
   //function to move label with mouse
@@ -712,6 +725,8 @@
 
   //function to overlay population data(actually underlay)
   function popOverlay(usStates, map, path, csvData) {
+    var population = "pop" + yrExpressed;
+
     var statePop = map
       .selectAll(".pop")
       .data(usStates)
@@ -721,12 +736,12 @@
         return "pop " + d.properties.stateId;
       })
       .attr("d", path)
-      .attr("value", (d) => d.properties.pop_2018)
+      .attr("value", (d) => d.properties["pop" + yrExpressed])
       .style("fill", function (d) {
         return choropleth(
           d.properties,
-          makeColorScale(csvData, 1, "pop_2018"),
-          "pop_2018"
+          makeColorScale(csvData, 1, population),
+          population
         );
       });
   }
