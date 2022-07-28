@@ -85,7 +85,7 @@
 }
 
 .barLabels {
-  fill: white;
+  fill: rgb(123, 88, 88);
   font-family: sans-serif;
   font-size: 0.4em;
 }
@@ -115,12 +115,11 @@ button {
   display: inline-block;
   vertical-align: middle;
   border: none;
-
   margin: 0;
   text-decoration: none;
   background: #e8e6e6;
   border-radius: 0.25rem;
-  box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.5);
+  box-shadow: 0px 1px 5px rgba(0, 0, 0, 0.5);
   color: #4c3c56;
   font-family: sans-serif;
   font-size: 0.95rem;
@@ -130,10 +129,6 @@ button {
   -webkit-appearance: none;
   -moz-appearance: none;
 }
-
-/* button:hover {
-  background: #80808065;
-} */
 
 button:active {
   transform: scale(0.9);
@@ -161,4 +156,19 @@ button.pop {
   padding: 0;
   display: inline-block;
   line-height: 1em;
+}
+
+.radio {
+  height: 40px;
+  padding: 10px;
+  margin-top: 0.5rem;
+  background: rgba(128, 128, 128, 0.2); /*#e8e6e6;*/
+  border-radius: 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.radio label {
+  padding-left: 10px;
 }
