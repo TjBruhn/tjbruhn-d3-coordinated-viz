@@ -8,6 +8,13 @@
   console.log("Branch = master");
   //define psuedo-global variables that will be available to everything within the wrap function
 
+  //available years
+  var yearArray = ["_2016", "_2017", "_2018"];
+
+  //initial year to set display to
+  var yrExpressed = yearArray[0];
+
+  //csv attributes to be joined to usStates
   var attrArray = [
     "total",
     "residential",
@@ -15,10 +22,13 @@
     "electric_power",
     "industrial",
     "transportation",
-    "pop_2018",
-  ]; //csv attributes to be joined to usStates
+    "pop",
+  ];
 
-  var expressed = attrArray[0]; //initial variable to display set to start with total
+  var attrExpressed = attrArray[0];
+
+  //initial variable to set display to
+  var expressed = attrExpressed + yrExpressed;
 
   //variable that notes if population overlay is on
   var popOverlayStatus = "off";
@@ -31,13 +41,16 @@
     industrial: "Industrial",
     transportation: "Transportation",
     total: "All",
-    pop_2018: "Overlay Population",
+    pop: "Overlay Population",
   };
-  console.log("attrLabel", attrLabels.pop_2018);
+
+  //container dimensions
+  var container = document.querySelector(".container");
 
   //chart frame dimensions
   var chartWidth = window.innerWidth * 0.425,
-    chartHeight = 510,
+    //make chart Height dynamic to match the container
+    chartHeight = container.clientHeight - 40,
     chartRange = chartHeight - 10,
     leftPadding = 25,
     rightPadding = 2,
@@ -51,7 +64,7 @@
     return d3
       .scaleLinear()
       .range([chartRange, 0]) //adjusted to show small vals and not have high vals touch top
-      .domain([0, d3.max(csvData, (d) => parseFloat(d[expressed])) + 5]); //adjust to data range
+      .domain([0, d3.max(csvData, (d) => parseFloat(d[expressed])) * 1.02]); //adjust to data range
   }
   //begin script when window loads
   window.onload = setMap();
@@ -61,12 +74,6 @@
     //map frame dimensions
     var width = window.innerWidth * 0.5,
       height = 460;
-
-    // var mapDiv = d3
-    //   .select("body div")
-    //   .append("div")
-    //   .attr("class", "mapDiv")
-    //   .style("width", window.innerWidth * 0.5 + 5 + "px");
 
     var map = d3
       .select(".mapDiv")
@@ -89,7 +96,7 @@
 
     //use queue to parallelize asynchronous data loading
     var promises = [];
-    promises.push(d3.csv("data/stateData.csv")); //load attributes from csv
+    promises.push(d3.csv("data/stateData_yrs.csv")); //load attributes from csv
     promises.push(d3.json("data/usStates.topojson")); //Load spatial data
     Promise.all(promises).then(callback);
 
@@ -97,23 +104,11 @@
       csvData = data[0];
       usSt = data[1];
 
-      console.log("csv: ", csvData[47]);
-      console.log("usSt: ", usSt.objects.usStates.geometries[0].properties);
-
       //place graticule on map
       setGraticule(map, path);
 
       //translate us topojson
       var usStates = topojson.feature(usSt, usSt.objects.usStates).features;
-
-      console.log("new usSt: ", usSt.objects.usStates.geometries[0].properties);
-
-      //could use to add adjacent countries to the map
-      // var states = map
-      //   .append("path")
-      //   .datum(usStates) //the geojson feature collection as a single datum drawn as a single feature
-      //   .attr("class", "states")
-      //   .attr("d", path); // d is an attribute of <path> not the variable d that holds data in a data block
 
       //join csvdata to geojson enumeration units
       usStates = joinData(usStates, csvData);
@@ -130,13 +125,14 @@
       //add legend to the map
       legend(map);
 
-      console.log("csvData", csvData);
-
       //add coordinated viz to the map
       setChart(csvData, colorScale);
 
       //add btnGroup selector
       createBtnGroup(csvData);
+
+      //add temporal radio
+      createTemporalSelect(csvData);
 
       //load page with the all button in the pressed position
       d3.select(".total")
@@ -183,9 +179,13 @@
         if (geojsonKey == csvKey) {
           //assign attributes and values
           geojsonProps["state_name"] = csvState["state_name"]; //assign state_nam attr val seperate to retain as string
-          attrArray.forEach(function (attr) {
-            var val = parseFloat(csvState[attr]); //get attribute value as float
-            geojsonProps[attr] = val; // assign attr value to usStates
+
+          //join the attributes outer loop through years inner loop through sources
+          yearArray.forEach(function (yr) {
+            attrArray.forEach(function (attr) {
+              var val = parseFloat(csvState[attr + yr]); //get attribute value as float
+              geojsonProps[attr + yr] = val; // assign attr value to usStates
+            });
           });
         }
       }
@@ -224,7 +224,6 @@
 
   //function to create colorscale generator
   function makeColorScale(data, colorClass, attr) {
-    console.log("makecolor scale called");
     var colorClasses = [];
     var classCount = 5;
     if (colorClass == 1) {
@@ -363,12 +362,12 @@
       .attr("class", "chartTitle");
 
     //create frame for chart border
-    // var chartFrame = chart
-    //   .append("rect")
-    //   .attr("class", "chartFrame")
-    //   .attr("width", chartInnerWidth)
-    //   .attr("height", chartInnerHeight)
-    //   .attr("transform", translate);
+    var chartFrame = chart
+      .append("rect")
+      .attr("class", "chartFrame")
+      .attr("width", chartInnerWidth)
+      .attr("height", chartInnerHeight)
+      .attr("transform", translate);
 
     updateChart(bars, barLabels, csvData, colorScale);
   } //end setchart
@@ -457,13 +456,13 @@
       .style("height", "42px")
       .on("click", function () {
         //distiguish between pop overlay button and attribute change buttons
-        if (this.value == "pop_2018") {
+        if (this.value == "pop") {
           //change transparancy to show pop overlay
           if (popOverlayStatus == "off") {
             d3.selectAll(".states").style("fill-opacity", "50%");
             d3.selectAll(".legendBar").style("fill-opacity", "50%");
             popOverlayStatus = "on";
-            d3.select(".pop_2018")
+            d3.select("button.pop")
               .html("Remove Population")
               .style("box-shadow", "none")
               .style("background", "#9ecae1")
@@ -477,9 +476,9 @@
             d3.selectAll(".states").style("fill-opacity", "100%");
             d3.selectAll(".legendBar").style("fill-opacity", "100%");
             popOverlayStatus = "off";
-            d3.select(".pop_2018")
+            d3.select("button.pop")
               .html("Overlay Population")
-              .style("box-shadow", "0px 1px 2px rgba(0, 0, 0, 0.5)")
+              .style("box-shadow", "0px 1px 5px rgba(0, 0, 0, 0.5)")
               .style("background", "#deebf7")
               .style("outline", "none");
             d3.select(".High") //return high label to left side of legend
@@ -488,11 +487,11 @@
           }
         } else {
           changeAttribute(this.value, csvData);
-          console.log("expressed = ", expressed);
+
           //make button appear pressed down
           //first remove pressed look from all
-          d3.selectAll(".attrOptions:not(.pop_2018)")
-            .style("box-shadow", "0px 1px 2px rgba(0, 0, 0, 0.5)")
+          d3.selectAll(".attrOptions:not(.pop)")
+            .style("box-shadow", "0px 1px 5px rgba(0, 0, 0, 0.5)")
             .style("background", "#e8e6e6")
             .style("outline", "none");
           //then apply pressed look to the selected
@@ -515,10 +514,53 @@
       });
   } //end createBtnGroup
 
+  //create temporal radio selections
+  function createTemporalSelect(csvData) {
+    var radioDiv = d3
+      .select(".mapDiv") //add div for radio buttons
+      .append("div")
+      .attr("class", "radio");
+
+    var radioLabel = d3
+      .select(".radio") //add title preceeding radios
+      .append("h3")
+      .html("Year - ");
+
+    var radioInline = d3
+      .select(".radio") //add for to hold radios
+      .append("form")
+      .attr("class", "radioInline");
+
+    //iterate through data to create radios
+    var radioOptions = radioInline
+      .selectAll("label")
+      .data(yearArray)
+      .enter()
+      .append("span"); //create span to hold label and radio - required to get order label then button
+    radioOptions
+      .append("label") // add radio labels
+      .attr("for", (d) => d)
+      .text((d) => d.substring(1)); //remove preceeding underscore
+    radioOptions
+      .append("input") //add radio button
+      .attr("class", (d) => "radioOption " + d)
+      .attr("type", "radio")
+      .attr("name", "year")
+      .attr("id", (d) => d)
+      .attr("value", (d) => d)
+      .property("checked", (d, i) => i === 0) //set first button as selected
+      .on("change", function () {
+        //update year then update chart/map
+        yrExpressed = this.value;
+        changeAttribute(attrExpressed, csvData);
+      });
+  }
+
   //btnGroup change event listener
   function changeAttribute(attribute, csvData) {
     //change the expressed attribute
-    expressed = attribute;
+    expressed = attribute + yrExpressed;
+    attrExpressed = attribute;
 
     //recreate the color scale
     var colorScale = makeColorScale(csvData, 5, expressed);
@@ -555,7 +597,7 @@
       })
       .duration(500);
 
-    //transition flash axisBackground
+    //create transition to flash axisBackground
     var axisBackground = d3
       .selectAll(".axisBackground")
       .transition()
@@ -604,16 +646,20 @@
         return leftPadding + i * fraction + (fraction - 1) / 2;
       })
       .attr("y", function (d) {
-        return yScale(csvData)(parseFloat(d[expressed])) + topBottomPadding + 8;
+        return yScale(csvData)(parseFloat(d[expressed])) + topBottomPadding - 2;
       })
       .text(function (d) {
         return d.stateId; //use state abbr instead of vals
       });
 
+    //main title for the page
     var chartTitle = d3
       .select(".chartTitle")
       .text(
-        "Metric Tons of CO2 emitted by " + attrLabels[expressed] + " sources"
+        "Metric Tons of CO2 Emitted by " +
+          attrLabels[attrExpressed] +
+          " Sources in " +
+          yrExpressed.substring(1)
       );
   } //end update chart
 
@@ -664,14 +710,17 @@
   function setLabel(props) {
     //round mtco2 to 2 decimal
     var mtco2 = Number(props[expressed]).toFixed(2);
+    var population = props["pop" + yrExpressed].toLocaleString();
 
     //label content
     var labelAttribute =
       "<h1>" +
       mtco2 +
-      "</h1><b>MTCO2 <br> " +
-      attrLabels[expressed] +
-      " sources</b>";
+      "</h1>MTCO2 <br> " +
+      yrExpressed.substring(1) +
+      " " +
+      attrLabels[attrExpressed] +
+      " sources";
 
     //create info label div
     var infoLabel = d3
@@ -681,10 +730,11 @@
       .attr("id", props.stateId + "_label")
       .html(labelAttribute);
 
+    //add state name and population
     var stateName = infoLabel
       .append("div")
       .attr("class", "labelname")
-      .html(props.state_name + "<br> pop: " + props.pop_2018.toLocaleString()); // TODO: get commas in number
+      .html("<b>" + props.state_name + "</b>" + "<br> pop: " + population);
   }
 
   //function to move label with mouse
@@ -712,6 +762,8 @@
 
   //function to overlay population data(actually underlay)
   function popOverlay(usStates, map, path, csvData) {
+    var population = "pop" + yrExpressed;
+
     var statePop = map
       .selectAll(".pop")
       .data(usStates)
@@ -721,12 +773,12 @@
         return "pop " + d.properties.stateId;
       })
       .attr("d", path)
-      .attr("value", (d) => d.properties.pop_2018)
+      .attr("value", (d) => d.properties["pop" + yrExpressed])
       .style("fill", function (d) {
         return choropleth(
           d.properties,
-          makeColorScale(csvData, 1, "pop_2018"),
-          "pop_2018"
+          makeColorScale(csvData, 1, population),
+          population
         );
       });
   }

@@ -1,4 +1,8 @@
 /* Stylesheet by Trever J. Bruhn 2022*/
+body {
+  font-family: "Ubuntu", sans-serif;
+  background-color: floralwhite;
+}
 
 .mainTitle {
   text-align: center;
@@ -47,10 +51,10 @@
 }
 
 .legendLabel {
-  font-family: sans-serif;
+  font-weight: 300;
   /* the following add the halo effect */
   paint-order: stroke;
-  font-size: 1.05rem;
+  font-size: 0.95rem;
   stroke: white;
   stroke-width: 2;
   stroke-opacity: 1;
@@ -65,7 +69,7 @@
 }
 
 .chartBackground {
-  fill: rgba(128, 128, 128, 0.2);
+  fill: #e8e6e6; /*rgba(128, 128, 128, 0.2);*/
   stroke: #999;
   stroke-width: 3px;
   shape-rendering: crispEdges;
@@ -79,15 +83,14 @@
 }
 
 .chartTitle {
-  font-family: sans-serif;
   font-size: 1em;
   font-weight: bold;
 }
 
 .barLabels {
-  fill: white;
-  font-family: sans-serif;
+  fill: rgb(123, 88, 88);
   font-size: 0.4em;
+  font-weight: 300;
 }
 
 .axis path,
@@ -104,7 +107,8 @@
 }
 
 .axis text {
-  font-family: sans-serif;
+  font-family: "Ubuntu", sans-serif;
+  font-weight: 300;
   font-size: 0.8em;
   fill: rgb(41, 40, 40);
 }
@@ -115,14 +119,14 @@ button {
   display: inline-block;
   vertical-align: middle;
   border: none;
-
   margin: 0;
   text-decoration: none;
   background: #e8e6e6;
   border-radius: 0.25rem;
-  box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.5);
+  box-shadow: 0px 1px 5px rgba(0, 0, 0, 0.5);
   color: #4c3c56;
-  font-family: sans-serif;
+  font-family: "Ubuntu", sans-serif; /*needed to override default button styles*/
+  font-weight: 300;
   font-size: 0.95rem;
   cursor: pointer;
   text-align: center;
@@ -131,15 +135,11 @@ button {
   -moz-appearance: none;
 }
 
-/* button:hover {
-  background: #80808065;
-} */
-
 button:active {
   transform: scale(0.9);
 }
 
-button.pop_2018 {
+button.pop {
   margin-left: 1%;
   background: #deebf7;
 }
@@ -161,4 +161,23 @@ button.pop_2018 {
   padding: 0;
   display: inline-block;
   line-height: 1em;
+}
+
+.radio {
+  height: 40px;
+  padding: 10px;
+  margin-top: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.radio h3 {
+  padding-left: 10px;
+  font-weight: 400;
+}
+
+.radio label {
+  padding-left: 10px;
+  font-weight: 300;
 }
