@@ -49,7 +49,8 @@
 
   //chart frame dimensions
   var chartWidth = window.innerWidth * 0.425,
-    chartHeight = container.clientHeight - 20,
+    //make chart Height dynamic to match the container
+    chartHeight = container.clientHeight - 40,
     chartRange = chartHeight - 10,
     leftPadding = 25,
     rightPadding = 2,
@@ -539,7 +540,7 @@
     radioOptions
       .append("label") // add radio labels
       .attr("for", (d) => d)
-      .text((d) => d.substring(1));
+      .text((d) => d.substring(1)); //remove preceeding underscore
     radioOptions
       .append("input") //add radio button
       .attr("class", (d) => "radioOption " + d)
