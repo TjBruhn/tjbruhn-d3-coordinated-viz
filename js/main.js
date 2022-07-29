@@ -710,7 +710,7 @@
   function setLabel(props) {
     //round mtco2 to 2 decimal
     var mtco2 = Number(props[expressed]).toFixed(2);
-    var population = props["pop" + yrExpressed].toLocaleString();
+    var population = Number(props["pop" + yrExpressed]).toLocaleString();
 
     //label content
     var labelAttribute =
