@@ -35,7 +35,7 @@
   var attrLabels = {
     residential: "Residential",
     commercial: "Commercial",
-    electric_power: "Electric Power Production",
+    electric_power: "Electricity Production",
     industrial: "Industrial",
     transportation: "Transportation",
     total: "All",
@@ -226,10 +226,6 @@
     var classCount = 5;
     if (colorClass == 1) {
       colorClasses = ["#deebf7", "#9ecae1", "#3182bd"];
-      //["#eff3ff", "#bdd7e7", "#6baed6", "#3182bd", "#08519c"]; //blues-5
-      //greens["#edf8e9", "#bae4b3", "#74c476", "#31a354", "#006d2c"];
-      //grays["#f7f7f7", "#cccccc", "#969696", "#636363", "#252525"];
-      //YlGnBu["#ffffcc", "#a1dab4", "#41b6c4", "#2c7fb8", "#253494"];
       classCount = 3;
     } else {
       colorClasses = ["#feebe2", "#fbb4b9", "#f768a1", "#c51b8a", "#7a0177"];
