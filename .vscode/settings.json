@@ -1,5 +1,5 @@
 {
   "prettier.proseWrap": "always",
   "prettier.enable": true,
-  "liveServer.settings.CustomBrowser": "chrome"
+  "liveServer.settings.CustomBrowser": "firefox"
 }

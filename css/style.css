@@ -29,7 +29,7 @@ body {
   border-top: thin solid #999;
   text-align: center;
   font-weight: 300;
-  font-size: 0.5em;
+  font-size: 0.75em;
   fill: rgb(41, 40, 40);
 }
 
@@ -102,9 +102,15 @@ a:hover {
 }
 
 .barLabels {
-  fill: rgb(123, 88, 88);
+  fill: black; /*rgb(123, 88, 88);8*/
   font-size: 0.4em;
   font-weight: 300;
+  /* the following add the halo effect */
+  paint-order: stroke;
+  stroke: white;
+  stroke-width: 2;
+  stroke-opacity: 1;
+  /*end halo effect */
 }
 
 .axis path,
