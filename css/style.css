@@ -18,15 +18,11 @@ body {
   height: 100%;
   width: 55%;
   margin: 0 0 0 10px;
-  /* vertical-align: top; */
-  /* background-color: blue; */
 }
 
 .chartDiv {
   height: 100%;
   flex-grow: 1;
-  /* vertical-align: top; */
-  /* background-color: green; */
 }
 
 .dataRef {
