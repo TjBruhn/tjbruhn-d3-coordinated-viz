@@ -1,7 +1,5 @@
 // javascript by Trever J. Bruhn 2022
 
-//const { data } = require("jquery");
-
 //wrap everything in a function to create local scope for all variables and functions
 (function () {
   //which branch
